@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Spotify AI{% endblock %}</title>
+  <style>
+    :root {
+      --bg-base: #000000;
+      --bg-surface: #121212;
+      --bg-card: #181818;
+      --bg-card-hover: #282828;
+      --spotify-green: #1DB954;
+      --spotify-green-hover: #1ed760;
+      --text-main: #FFFFFF;
+      --text-sub: #B3B3B3;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+
+    /* Sidebar */
+    .sidebar { width: 250px; background-color: var(--bg-surface); padding: 24px 18px; display: flex; flex-direction: column; gap: 20px; flex-shrink: 0; }
+    .brand-logo { color: var(--spotify-green); font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .nav-links { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+    .nav-item { color: var(--text-sub); text-decoration: none; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 6px; transition: all 0.2s ease; }
+    .nav-item:hover { color: var(--text-main); background-color: #242424; }
+
+    /* Viewport */
+    .main-viewport { flex: 1; display: flex; flex-direction: column; background: linear-gradient(180deg, #222222 0%, var(--bg-surface) 280px); overflow-y: auto; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 32px; background-color: rgba(18, 18, 18, 0.7); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+    .search-box { width: 360px; background: #242424; border: 1px solid transparent; border-radius: 500px; padding: 10px 18px; color: var(--text-main); font-size: 14px; outline: none; transition: border 0.2s ease; }
+    .search-box:focus { border: 1px solid #ffffff; }
+    .user-pill { background: #000; padding: 6px 16px; border-radius: 500px; font-size: 13px; font-weight: 600; border: 1px solid #333; }
+
+    .flash-container { padding: 12px 32px 0 32px; }
+    .flash-alert { padding: 12px 16px; border-radius: 6px; background-color: #e91e63; color: #fff; font-size: 13px; margin-bottom: 12px; }
+    .content-area { padding: 24px 32px 60px 32px; }
+
+    {% block extra_css %}{% endblock %}
+  </style>
+</head>
+<body>
+
+  {% if current_user.is_authenticated %}
+  <aside class="sidebar">
+    <a href="{{ url_for('main.dashboard') }}" class="brand-logo">
+      <span>●</span> Spotify AI
+    </a>
+    <nav class="nav-links">
+      <a href="{{ url_for('main.dashboard') }}" class="nav-item">🏠 Home</a>
+    </nav>
+    <div style="flex-grow: 1;"></div>
+    <nav class="nav-links">
+      <a href="{{ url_for('auth.logout') }}" class="nav-item" style="color: #ff5252;">🚪 Logout</a>
+    </nav>
+  </aside>
+  {% endif %}
+
+  <main class="main-viewport">
+    {% if current_user.is_authenticated %}
+    <header class="top-bar">
+      <form action="{{ url_for('main.search') }}" method="POST">
+        <input type="text" name="search_query" class="search-box" placeholder="Search mood, Hindi, artist, vibe..." required>
+      </form>
+      <div class="user-pill">{{ current_user.username }} ({{ current_user.location }})</div>
+    </header>
+    {% endif %}
+
+    <div class="flash-container">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="flash-alert">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    </div>
+
+    <div class="content-area">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+</body>
+</html>
