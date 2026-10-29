@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard - Spotify AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #121212; color: #ffffff; padding: 24px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #282828; padding-bottom: 16px; margin-bottom: 24px; }
+    h1 { color: #1db954; font-size: 1.6rem; }
+    .badge { background: #282828; padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; color: #b3b3b3; }
+    .logout-btn { color: #ef4444; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+    
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .stat-card { background: #181818; border: 1px solid #282828; padding: 18px; border-radius: 8px; }
+    .stat-card span { font-size: 0.8rem; color: #b3b3b3; text-transform: uppercase; }
+    .stat-card h3 { font-size: 1.8rem; color: #fff; margin-top: 4px; }
+
+    .panel { background: #181818; border: 1px solid #282828; border-radius: 8px; padding: 20px; margin-bottom: 28px; }
+    .panel h2 { font-size: 1.2rem; margin-bottom: 16px; color: #fff; border-bottom: 1px solid #282828; padding-bottom: 8px; }
+
+    /* Forms */
+    .inline-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 120px; gap: 10px; align-items: center; }
+    input[type="text"], input[type="email"], input[type="password"] { padding: 8px 12px; background: #282828; border: 1px solid #3e3e3e; border-radius: 6px; color: #fff; font-size: 0.85rem; width: 100%; }
+    .btn { padding: 8px 14px; border-radius: 6px; border: none; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    .btn-green { background: #1db954; color: #000; }
+    .btn-blue { background: #3b82f6; color: #fff; }
+    .btn-red { background: #ef4444; color: #fff; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 12px; }
+    th { text-align: left; padding: 10px; background: #202020; color: #b3b3b3; font-weight: 600; }
+    td { padding: 10px; border-bottom: 1px solid #282828; vertical-align: middle; }
+    tr:hover { background: #1f1f1f; }
+    .table-actions { display: flex; gap: 8px; align-items: center; }
+
+    .alert { padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 16px; }
+    .alert-success { background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #86efac; }
+    .alert-danger { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #fca5a5; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Spotify AI Database Controller</h1>
+        <span class="badge">Logged in as admin123</span>
+      </div>
+      <div>
+        <a href="{{ url_for('main.dashboard') }}" style="color: #b3b3b3; text-decoration: none; margin-right: 18px;">← Return to App</a>
+        <a href="{{ url_for('admin.logout') }}" class="logout-btn">Log Out</a>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <div class="alert alert-{{ category }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Database Overview Metrics -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span>Registered Users</span>
+        <h3>{{ total_users }}</h3>
+      </div>
+      <div class="stat-card">
+        <span>Logged Search Queries</span>
+        <h3>{{ total_searches }}</h3>
+      </div>
+      <div class="stat-card">
+        <span>Active Database</span>
+        <h3>SQLite</h3>
+      </div>
+    </div>
+
+    <!-- Create User Panel -->
+    <div class="panel">
+      <h2>Create New User</h2>
+      <form method="POST" action="{{ url_for('admin.create_user') }}" class="inline-form">
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <input type="text" name="location" placeholder="Location (e.g. India)" value="India">
+        <button type="submit" class="btn btn-green">Add User</button>
+      </form>
+    </div>
+
+    <!-- Users Management Table -->
+    <div class="panel">
+      <h2>Database Users (CRUD)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Location</th>
+            <th>Reset Password</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <form method="POST" action="{{ url_for('admin.update_user', user_id=u.id) }}">
+              <td><strong>#{{ u.id }}</strong></td>
+              <td><input type="text" name="username" value="{{ u.username }}" required></td>
+              <td><input type="email" name="email" value="{{ u.email }}" required></td>
+              <td><input type="text" name="location" value="{{ u.location or '' }}"></td>
+              <td><input type="password" name="password" placeholder="New password (optional)"></td>
+              <td>
+                <div class="table-actions">
+                  <button type="submit" class="btn btn-blue">Save</button>
+            </form>
+                  <form method="POST" action="{{ url_for('admin.delete_user', user_id=u.id) }}" onsubmit="return confirm('Delete user #{{ u.id }} and all history?');">
+                    <button type="submit" class="btn btn-red">Delete</button>
+                  </form>
+                </div>
+              </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Search History Management Table -->
+    <div class="panel">
+      <h2>Search Histories & Memory (CRUD)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>User ID</th>
+            <th>Search Query Text</th>
+            <th>Logged At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in search_histories %}
+          <tr>
+            <td>#{{ h.id }}</td>
+            <td><strong>User #{{ h.user_id }}</strong></td>
+            <td>
+              <form method="POST" action="{{ url_for('admin.update_history', history_id=h.id) }}" style="display:flex; gap:8px;">
+                <input type="text" name="query_text" value="{{ h.query_text }}" required>
+                <button type="submit" class="btn btn-blue">Update</button>
+              </form>
+            </td>
+            <td style="color:#888;">{{ h.timestamp.strftime('%Y-%m-%d %H:%M') if h.timestamp else 'N/A' }}</td>
+            <td>
+              <form method="POST" action="{{ url_for('admin.delete_history', history_id=h.id) }}" onsubmit="return confirm('Delete this search record?');">
+                <button type="submit" class="btn btn-red">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</body>
+</html>
