@@ -6,8 +6,10 @@ from blueprints.auth import auth_bp
 from blueprints.main import main_bp
 from flask_login import LoginManager
 from models import User
+from blueprints.admin import admin_bp
 
 load_dotenv()
+
 
 def create_app():
     app = Flask(__name__)
@@ -28,6 +30,7 @@ def create_app():
     # Register Blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
+    app.register_blueprint(admin_bp)
 
     with app.app_context():
         db.create_all()
